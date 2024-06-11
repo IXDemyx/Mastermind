@@ -1,6 +1,10 @@
 {
     "players": [
         {
+            "name": "God Gamer",
+            "winstreak": 6
+        },
+        {
             "name": "Daniel",
             "winstreak": 5
         }

@@ -185,7 +185,7 @@ class MastermindScreen(Screen):
         '''Disables all pressable buttons except reset and ends the game with win or lose'''
         if win is None:
             if self.end_label.text != "YOU WIN!!":
-                if self.winstreak >= 5:
+                if self.winstreak >= 3:
                     self.add_to_scoreboard()
                 self.winstreak = 0
                 
@@ -202,7 +202,7 @@ class MastermindScreen(Screen):
                 self.winstreak += 1
             elif win is False:
                 self.end_label.text = "YOU LOSE!!"
-                if self.winstreak >= 5:
+                if self.winstreak >= 3:
                     self.add_to_scoreboard()
                 self.winstreak = 0
         self.winstreak_label.text = f"Winstreak: {self.winstreak}"
@@ -296,7 +296,7 @@ class ScoreboardScreen(Screen):
     def back_to_main(self, instance):
         self.manager.current = 'main'
 
-class MastermindGUI(App):
+class Mastermind(App):
     def build(self):
         sm = ScreenManager()
         sm.add_widget(MastermindScreen(name='main'))
@@ -305,4 +305,4 @@ class MastermindGUI(App):
 
 
 if __name__ == "__main__":
-    MastermindGUI().run()
+    Mastermind().run()
