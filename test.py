@@ -10,7 +10,6 @@ import mastermind_cmd
 from kivy.uix.screenmanager import ScreenManager, Screen
 import json
 from kivy.uix.scrollview import ScrollView
-from operator import itemgetter
 
 COLOR_DICT = {  "0" : "red", "1" : "yellow",
                 "2" : "green", "3" : "purple",
@@ -32,7 +31,7 @@ class MastermindScreen(Screen):
         super(MastermindScreen, self).__init__(**kwargs)
         self.admin_activated = False
         self.admin_combination = []
-        self.player_name = "Player1"
+        self.player_name = ""
         self.button_index = 0  # Index counter - goes through every selectionbutton and starts at 0 once it reached the end
         self.game_state = 0  # Counter that stops the game if all the Playfield buttons are filled 
         self.winstreak = 0  # Extra winstreak counter for the player to see how many times they won in a row
@@ -40,14 +39,14 @@ class MastermindScreen(Screen):
         self.tried_combinations = [ColorButton() for i in range(28)]  # Playfield that shows the combinations the player tried
         self.selected_buttons = [ColorButton() for i in range(4)]  # Field that shows the colors the player has chosen but not submitted in yet
         self.help_grid = [ColorButton() for i in range (28)]  # Helpfield that tells the player if they got an exact or contained hit
-        self.submit_button = Button(text="Submit",bold=True, size_hint=(0.3,0.1),pos_hint={'x': .685, 'y': .22}, on_release=self.submit_colors, background_color="blue", font_size=30)
-        self.delete_button = Button(text="Delete Selection",bold=True, size_hint=(0.2,0.09),pos_hint={'x': .33, 'y': .06}, on_release=self.delete_input, background_color="red",font_size=30)
-        self.restart_button = Button(text="Restart",bold=True, size_hint=(0.3,0.1),pos_hint={'x': .685, 'y': .88}, on_release=self.restart_game, background_color="purple",font_size=30)
+        self.submit_button = Button(text="Submit",bold=True, size_hint=(0.3,0.1),pos_hint={'x': .685, 'y': .22}, on_release=self.submit_colors,background_normal=PICTURES_LIST[1], background_color="blue")
+        self.delete_button = Button(text="Delete Selection",bold=True, size_hint=(0.2,0.09),pos_hint={'x': .33, 'y': .06}, on_release=self.delete_input,background_normal=PICTURES_LIST[1], background_color="red")
+        self.restart_button = Button(text="Restart",bold=True, size_hint=(0.3,0.1),pos_hint={'x': .685, 'y': .88}, on_release=self.restart_game,background_normal=PICTURES_LIST[1], background_color="purple")
         self.admin_button = Button(text="",size_hint=(0.1,0.05),pos_hint={'x': .01, 'y': .25}, on_release=self.admin_stuff,background_color="black")
         self.end_label = Label(text = "Red: exact hit\nYellow: contains color",size_hint=(0.3,0.1),pos_hint={'x': .68, 'y': .62},font_size = '26sp')
-        self.winstreak_label = Label(text = f"Current Winstreak: {self.winstreak}",size_hint=(0.3,0.1),pos_hint={'x': .68, 'y': .3},font_size=24, bold=True)
+        self.winstreak_label = Label(text = f"Winstreak: {self.winstreak}",size_hint=(0.3,0.1),pos_hint={'x': .75, 'y': .3},font_size = '22sp', bold=True)
         self.name_textinput = TextInput(text='Name here (Confirm with Enter)', multiline=False, size_hint=(0.3,0.05), pos_hint={'x': .685, 'y': .4}, on_text_validate=self.submit_name)
-        self.scoreboard_button = Button(text="Show Scoreboard", bold=True, size_hint=(0.3, 0.1), pos_hint={'x': .685, 'y': .45}, on_release=self.show_scoreboard, font_size=30)
+        self.scoreboard_button = Button(text="Show Scoreboard", bold=True, size_hint=(0.3, 0.1), pos_hint={'x': .685, 'y': .45}, on_release=self.show_scoreboard)
 
         # Using the functions to initialize the different grids
         # Also adding everything into the window
@@ -185,10 +184,7 @@ class MastermindScreen(Screen):
         '''Disables all pressable buttons except reset and ends the game with win or lose'''
         if win is None:
             if self.end_label.text != "YOU WIN!!":
-                if self.winstreak >= 5:
-                    self.add_to_scoreboard()
                 self.winstreak = 0
-                
             self.end_label.text = "Red: exact hit\nYellow: contains color"
         else:
             self.submit_button.disabled = True
@@ -202,29 +198,8 @@ class MastermindScreen(Screen):
                 self.winstreak += 1
             elif win is False:
                 self.end_label.text = "YOU LOSE!!"
-                if self.winstreak >= 5:
-                    self.add_to_scoreboard()
                 self.winstreak = 0
         self.winstreak_label.text = f"Winstreak: {self.winstreak}"
-        
-    def add_to_scoreboard(self):
-        with open(SCORES_LIST, 'r') as file:
-            data = json.load(file)
-
-        new_score = {"name": self.player_name, "winstreak": self.winstreak}
-
-        # Add the new score to the data
-        data['players'].append(new_score)
-
-        # Sort the players by winstreak in descending order
-        sorted_players = sorted(data['players'], key=itemgetter('winstreak'), reverse=True)
-
-        # Keep only the top MAX_ENTRIES entries
-        sorted_players = sorted_players[:ScoreboardScreen.MAX_ENTRIES]
-
-        # Write the updated data back to the JSON file
-        with open(SCORES_LIST, 'w') as file:
-            json.dump({'players': sorted_players}, file, indent=4)
                 
     def generate_random_colors(self):
         '''Choses 4 random colors from the selection buttons'''
@@ -246,13 +221,12 @@ class MastermindScreen(Screen):
         self.manager.current = 'scoreboard'
 
 class ScoreboardScreen(Screen):
-    MAX_ENTRIES = 20
     def __init__(self, **kwargs):
         super(ScoreboardScreen, self).__init__(**kwargs)
         
         layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-        self.label = Label(text="Highest Winstreaks",size_hint=(1, 0.1), bold=True,font_size=30)
-        self.btn_back = Button(text="Back to Main Screen", size_hint=(1, 0.1),font_size=30)
+        self.label = Label(text="Scoreboard",size_hint=(1, 0.3))
+        self.btn_back = Button(text="Back to Main Screen", size_hint=(1, 0.1))
         self.btn_back.bind(on_press=self.back_to_main)
         layout.add_widget(self.label)
         layout.add_widget(self.btn_back)
@@ -261,12 +235,19 @@ class ScoreboardScreen(Screen):
         scroll_view = ScrollView()
 
         # Create a GridLayout to organize the data in rows
-        self.grid_layout = GridLayout(cols=2, size_hint_y=1)
+        self.grid_layout = GridLayout(cols=2, size_hint_y=1.3)
         self.grid_layout.bind(minimum_height=self.grid_layout.setter('height'))
 
         # Add headers to the layout
-        self.grid_layout.add_widget(Label(text='Name', bold=True,font_size=14))
-        self.grid_layout.add_widget(Label(text='Winstreak', bold=True,font_size=14))
+        self.grid_layout.add_widget(Label(text='Name', bold=True))
+        self.grid_layout.add_widget(Label(text='Score', bold=True))
+
+        # Read the JSON data from file and populate the layout
+        with open(SCORES_LIST, 'r') as file:
+            data = json.load(file)
+            for player in data['players']:
+                self.grid_layout.add_widget(Label(text=player['name']))
+                self.grid_layout.add_widget(Label(text=str(player['score'])))
 
         # Add the grid layout to the ScrollView
         scroll_view.add_widget(self.grid_layout)
@@ -275,23 +256,6 @@ class ScoreboardScreen(Screen):
         layout.add_widget(scroll_view)
 
         self.add_widget(layout)
-
-    def on_pre_enter(self, *args):
-        self.update_scoreboard()
-
-    def update_scoreboard(self):
-        # Clear the existing scoreboard
-        self.grid_layout.clear_widgets()
-        self.grid_layout.add_widget(Label(text='Name', bold=True,font_size=24))
-        self.grid_layout.add_widget(Label(text='Winstreak', bold=True,font_size=24))
-
-        # Read the JSON data from file and populate the layout
-        with open(SCORES_LIST, 'r') as file:
-            data = json.load(file)
-            sorted_players = sorted(data['players'], key=itemgetter('winstreak'), reverse=True)
-            for player in sorted_players:
-                self.grid_layout.add_widget(Label(text=player['name'],font_size=20))
-                self.grid_layout.add_widget(Label(text=str(player['winstreak']),font_size=20))
 
     def back_to_main(self, instance):
         self.manager.current = 'main'
